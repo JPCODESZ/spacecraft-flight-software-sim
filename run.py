@@ -1,67 +1,26 @@
-import csv
-import matplotlib.pyplot as plt
-
 """
-Mini Flight Software V1
+Mini Flight Software Simulator V2
 
 Goal:
-Simulate a simple spacecraft flight software loop.
+Simulate a simple spacecraft flight software loop using multiple files.
 
 The software:
 1. Reads simulated spacecraft sensor data.
 2. Checks for faults.
 3. Chooses the correct spacecraft mode.
-4. Saves mission telemetry to a CSV file.
-5. Creates a telemetry plot.
+4. Generates spacecraft subsystem commands.
+5. Logs telemetry.
+6. Detects important mission events.
+7. Saves telemetry to a CSV file.
+8. Creates a telemetry plot.
 """
 
-IDLE = "IDLE"
-CRUISE = "CRUISE"
-SAFE = "SAFE"
-
-
-def read_sensors(time_s):
-    """
-    Simulate spacecraft sensor readings at a given mission time.
-    """
-
-    battery_percent = 100 - 0.4 * time_s
-    temperature_c = 22 + 0.8 * time_s
-
-    sensors = {
-        "battery_percent": battery_percent,
-        "temperature_c": temperature_c
-    }
-
-    return sensors
-
-
-def check_faults(sensors):
-    """
-    Check sensor data for unsafe spacecraft conditions.
-    """
-
-    if sensors["battery_percent"] < 20:
-        return "LOW_BATTERY"
-
-    if sensors["temperature_c"] > 80:
-        return "HIGH_TEMPERATURE"
-
-    return None
-
-
-def choose_mode(time_s, fault):
-    """
-    Choose the spacecraft mode based on time and fault status.
-    """
-
-    if fault is not None:
-        return SAFE
-
-    if time_s < 5:
-        return IDLE
-
-    return CRUISE
+from sensors import read_sensors
+from flight_logic import check_faults, choose_mode
+from telemetry import save_telemetry_csv
+from plotting import plot_telemetry
+from commands import generate_commands
+from event_log import detect_events, save_event_log
 
 
 def print_status(time_s, mode, sensors, fault):
@@ -74,59 +33,56 @@ def print_status(time_s, mode, sensors, fault):
         f" | Mode: {mode}"
         f" | Battery: {sensors['battery_percent']:.1f}%"
         f" | Temperature: {sensors['temperature_c']:.1f}C"
+        f" | Signal: {sensors['signal_strength_percent']:.1f}%"
         f" | Fault: {fault}"
     )
 
 
-def save_telemetry_csv(telemetry_log):
+def print_commands(commands):
     """
-    Save telemetry records to a CSV file.
-    """
-
-    with open("telemetry.csv", "w", newline="") as file:
-        writer = csv.DictWriter(
-            file,
-            fieldnames=[
-                "time_s",
-                "mode",
-                "battery_percent",
-                "temperature_c",
-                "fault"
-            ]
-        )
-
-        writer.writeheader()
-        writer.writerows(telemetry_log)
-
-
-def plot_telemetry(telemetry_log):
-    """
-    Create a plot of battery and temperature over time.
+    Print one line of spacecraft command status.
     """
 
-    times = []
-    batteries = []
-    temperatures = []
+    print(
+        f"Commands:"
+        f" Payload={commands['payload_power']}"
+        f" | Cooling={commands['cooling_system']}"
+        f" | Antenna={commands['antenna_mode']}"
+    )
 
-    for record in telemetry_log:
-        times.append(record["time_s"])
-        batteries.append(record["battery_percent"])
-        temperatures.append(record["temperature_c"])
 
-    plt.figure(figsize=(10, 5))
+def should_print_status(time_s, new_events):
+    """
+    Decide when to print mission status to the terminal.
+    """
 
-    plt.plot(times, batteries, label="Battery Percent")
-    plt.plot(times, temperatures, label="Temperature C")
-    plt.axhline(80, linestyle="--", label="Temperature Fault Limit")
+    if time_s % 10 == 0:
+        return True
 
-    plt.xlabel("Time (seconds)")
-    plt.ylabel("Sensor Value")
-    plt.title("Spacecraft Telemetry Over Time")
-    plt.legend()
-    plt.grid(True)
+    if len(new_events) > 0:
+        return True
 
-    plt.savefig("telemetry_plot.png")
-    plt.close()
+    return False
+
+
+def create_telemetry_record(time_s, mode, sensors, fault, commands):
+    """
+    Create one telemetry record for the current mission time.
+    """
+
+    telemetry_record = {
+        "time_s": time_s,
+        "mode": mode,
+        "battery_percent": sensors["battery_percent"],
+        "temperature_c": sensors["temperature_c"],
+        "signal_strength_percent": sensors["signal_strength_percent"],
+        "fault": fault,
+        "payload_power": commands["payload_power"],
+        "cooling_system": commands["cooling_system"],
+        "antenna_mode": commands["antenna_mode"]
+    }
+
+    return telemetry_record
 
 
 def run_mission():
@@ -135,29 +91,55 @@ def run_mission():
     """
 
     print("Starting flight software simulation.")
-    print("-" * 70)
+    print("-" * 90)
 
     telemetry_log = []
+    mission_events = []
+    previous_mode = None
+    previous_fault = None
 
     for time_s in range(0, 121):
         sensors = read_sensors(time_s)
         fault = check_faults(sensors)
-        mode = choose_mode(time_s, fault)
+        mode = choose_mode(time_s, fault, sensors)
+        commands = generate_commands(mode)
 
-        telemetry_record = {
-            "time_s": time_s,
-            "mode": mode,
-            "battery_percent": sensors["battery_percent"],
-            "temperature_c": sensors["temperature_c"],
-            "fault": fault
-        }
+        new_events = detect_events(
+            time_s,
+            previous_mode,
+            mode,
+            previous_fault,
+            fault
+        )
+
+    
+
+        mission_events.extend(new_events)
+
+        previous_mode = mode
+        previous_fault = fault
+
+        telemetry_record = create_telemetry_record(
+            time_s,
+            mode,
+            sensors,
+            fault,
+            commands
+        )
 
         telemetry_log.append(telemetry_record)
 
-        print_status(time_s, mode, sensors, fault)
+        if should_print_status(time_s, new_events):
+            print_status(time_s, mode, sensors, fault)
+            print_commands(commands)
 
-    print("-" * 70)
+    print("-" * 90)
 
+    print("Mission events:")
+    for event in mission_events:
+        print(event)
+
+    save_event_log(mission_events)
     save_telemetry_csv(telemetry_log)
     plot_telemetry(telemetry_log)
 
