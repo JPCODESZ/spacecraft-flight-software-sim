@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-def plot_telemetry(telemetry_log):
+def plot_telemetry(telemetry_log, mission_profile):
     """
     Create a plot of spacecraft telemetry over time.
     """
@@ -28,9 +28,11 @@ def plot_telemetry(telemetry_log):
 
     plt.xlabel("Time (seconds)")
     plt.ylabel("Sensor Value")
-    plt.title("Spacecraft Telemetry Over Time")
+    plt.title(f"Spacecraft Telemetry — {mission_profile['name']}")
     plt.legend()
     plt.grid(True)
 
-    plt.savefig("telemetry_plot.png")
+    mission_slug = mission_profile["name"].lower().replace(" ", "_")
+    plot_filename = f"telemetry_plot_{mission_slug}.png"
+    plt.savefig(plot_filename)
     plt.close()
