@@ -1,51 +1,41 @@
-from flight_logic import IDLE, CRUISE, WARMING, COMMS_RECOVERY, SAFE
-
-
 def generate_commands(mode):
-    """
-    Generate spacecraft subsystem commands based on the current mode.
-    """
-
-    if mode == IDLE:
-        commands = {
+    if mode == "IDLE":
+        return {
             "payload_power": "OFF",
             "cooling_system": "LOW",
             "antenna_mode": "STANDBY"
         }
 
-    elif mode == CRUISE:
-        commands = {
+    if mode == "CRUISE":
+        return {
             "payload_power": "ON",
             "cooling_system": "NORMAL",
             "antenna_mode": "TRACKING"
         }
 
-    elif mode == WARMING:
-        commands = {
-            "payload_power": "ON",
-            "cooling_system": "HIGH",
+    if mode == "DOWNLINK":
+        return {
+            "payload_power": "OFF",
+            "cooling_system": "NORMAL",
             "antenna_mode": "TRACKING"
         }
 
-    elif mode == COMMS_RECOVERY:
-        commands = {
+    if mode == "COMMS_RECOVERY":
+        return {
             "payload_power": "OFF",
             "cooling_system": "NORMAL",
             "antenna_mode": "SIGNAL_SEARCH"
         }
 
-    elif mode == SAFE:
-        commands = {
+    if mode == "SAFE":
+        return {
             "payload_power": "OFF",
             "cooling_system": "MAX",
             "antenna_mode": "EMERGENCY_BEACON"
         }
 
-    else:
-        commands = {
-            "payload_power": "OFF",
-            "cooling_system": "LOW",
-            "antenna_mode": "UNKNOWN"
-        }
-
-    return commands
+    return {
+        "payload_power": "OFF",
+        "cooling_system": "LOW",
+        "antenna_mode": "STANDBY"
+    }

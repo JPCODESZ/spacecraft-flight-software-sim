@@ -1,19 +1,11 @@
-def read_sensors(time_s, mission_profile):
+def read_sensors(spacecraft_state):
     """
-    Simulate spacecraft sensor readings at a given mission time.
-
-    The mission_profile controls how fast battery, temperature,
-    and signal strength change during the mission.
+    Read the current spacecraft state as sensor data.
     """
 
-    battery_percent = 100 - mission_profile["battery_drain_rate"] * time_s
-    temperature_c = 22 + mission_profile["temperature_rise_rate"] * time_s
-    signal_strength_percent = 100 - mission_profile["signal_loss_rate"] * time_s
-
-    sensors = {
-        "battery_percent": battery_percent,
-        "temperature_c": temperature_c,
-        "signal_strength_percent": signal_strength_percent
+    return {
+        "battery_percent": spacecraft_state["battery_percent"],
+        "temperature_c": spacecraft_state["temperature_c"],
+        "signal_strength_percent": spacecraft_state["signal_strength_percent"],
+        "data_storage_mb": spacecraft_state["data_storage_mb"]
     }
-
-    return sensors

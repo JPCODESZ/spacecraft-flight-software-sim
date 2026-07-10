@@ -2,37 +2,46 @@ import matplotlib.pyplot as plt
 
 
 def plot_telemetry(telemetry_log, mission_profile):
-    """
-    Create a plot of spacecraft telemetry over time.
-    """
+    mission_slug = mission_profile["name"].lower().replace(" ", "_")
+    filename = f"telemetry_plot_{mission_slug}.png"
 
-    times = []
-    batteries = []
-    temperatures = []
-    signal_strengths = []
+    times = [record["time_s"] for record in telemetry_log]
+    batteries = [record["battery_percent"] for record in telemetry_log]
+    temperatures = [record["temperature_c"] for record in telemetry_log]
+    signals = [record["signal_strength_percent"] for record in telemetry_log]
+    data_storage = [record["data_storage_mb"] for record in telemetry_log]
 
-    for record in telemetry_log:
-        times.append(record["time_s"])
-        batteries.append(record["battery_percent"])
-        temperatures.append(record["temperature_c"])
-        signal_strengths.append(record["signal_strength_percent"])
+    plt.figure(figsize=(11, 6))
 
-    plt.figure(figsize=(10, 5))
+    plt.plot(times, batteries, label="Battery (%)")
+    plt.plot(times, temperatures, label="Temperature (C)")
+    plt.plot(times, signals, label="Signal (%)")
+    plt.plot(times, data_storage, label="Data Storage (MB)")
 
-    plt.plot(times, batteries, label="Battery Percent")
-    plt.plot(times, temperatures, label="Temperature C")
-    plt.plot(times, signal_strengths, label="Signal Strength Percent")
+    plt.axhline(
+        y=80,
+        linestyle="--",
+        label="High Temperature Limit"
+    )
 
-    plt.axhline(80, linestyle="--", label="Temperature Fault Limit")
-    plt.axhline(60, linestyle="--", label="Signal Fault Limit")
+    plt.axhline(
+        y=60,
+        linestyle="--",
+        label="Low Signal Limit"
+    )
 
-    plt.xlabel("Time (seconds)")
-    plt.ylabel("Sensor Value")
+    plt.axhline(
+        y=90,
+        linestyle="--",
+        label="Data Storage Limit"
+    )
+
+    plt.xlabel("Mission Time (seconds)")
+    plt.ylabel("Telemetry Value")
     plt.title(f"Spacecraft Telemetry — {mission_profile['name']}")
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
 
-    mission_slug = mission_profile["name"].lower().replace(" ", "_")
-    plot_filename = f"telemetry_plot_{mission_slug}.png"
-    plt.savefig(plot_filename)
+    plt.savefig(filename)
     plt.close()
